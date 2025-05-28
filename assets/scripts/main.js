@@ -45,6 +45,9 @@ function initializeServiceWorker() {
   // We first must register our ServiceWorker here before any of the code in
   // sw.js is executed.
   // B1. TODO - Check if 'serviceWorker' is supported in the current browser
+  if (!'serviceWorker' in navigator) {
+    throw new Error('Your browser does not support service workers!');
+  } 
   // B2. TODO - Listen for the 'load' event on the window object.
   // Steps B3-B6 will be *inside* the event listener's function created in B2
   // B3. TODO - Register './sw.js' as a service worker (The MDN article
@@ -54,6 +57,16 @@ function initializeServiceWorker() {
   // B5. TODO - In the event that the service worker registration fails, console
   //            log that it has failed.
   // STEPS B6 ONWARDS WILL BE IN /sw.js
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      if (registration) {
+        console.log('Service Worker has been successfully registered!');
+      }
+    } catch (error) {
+      console.log('Registration of service worker failed: ', error);
+    }
+  });
 }
 
 /**
@@ -68,6 +81,10 @@ async function getRecipes() {
   // EXPOSE - START (All expose numbers start with A)
   // A1. TODO - Check local storage to see if there are any recipes.
   //            If there are recipes, return them.
+  let recipesFromStorage = localStorage.getItem('recipes');
+  if (recipesFromStorage) {
+    return JSON.parse(recipesFromStorage);
+  }
   /**************************/
   // The rest of this method will be concerned with requesting the recipes
   // from the network
@@ -99,7 +116,31 @@ async function getRecipes() {
   //            we have provided. Then, pass the recipes array to the Promise's
   //            resolve() method.
   // A10. TODO - Log any errors from catch using console.error
-  // A11. TODO - Pass any errors to the Promise's reject() function
+  // A11. TODO - Pass any errors to the Promise's reject() 
+  
+  let recipesToFetch = []; // A2
+
+  return new Promise((resolve, reject) => {
+    let lastIndex = RECIPE_URLS.length - 1;
+    RECIPE_URLS.forEach(async (url, index) => {
+      try {
+        let response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('URL could not be fetched correctly!');
+        }
+        let responseJSON = await response.json();
+        recipesToFetch.push(responseJSON);
+        
+        if (index === lastIndex) {
+          saveRecipesToStorage(recipesToFetch);
+          resolve(recipesToFetch);
+        }
+      } catch (error) {
+        console.error(error);
+        reject(error);
+      }
+    })
+  })
 }
 
 /**
