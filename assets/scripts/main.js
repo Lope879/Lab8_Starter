@@ -59,7 +59,7 @@ function initializeServiceWorker() {
   // STEPS B6 ONWARDS WILL BE IN /sw.js
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register("/sw.js");
+      const registration = await navigator.serviceWorker.register("sw.js");
       if (registration) {
         console.log('Service Worker has been successfully registered!');
       }
